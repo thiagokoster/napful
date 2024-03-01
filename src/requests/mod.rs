@@ -12,6 +12,9 @@ pub fn list_requests(fs: &dyn FileSystem) -> Result<Vec<String>, Error> {
             println!("Listing requests in: {}", requests_path.display());
             let mut files: Vec<String> = vec![];
             for entry in entries {
+                let file_content = fs.read_file(entry.as_path());
+                println!("File content:");
+                println!("{}", file_content.unwrap());
                 files.push(entry.display().to_string());
             }
             Ok(files)
@@ -23,36 +26,15 @@ pub fn list_requests(fs: &dyn FileSystem) -> Result<Vec<String>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{cell::RefCell, io, path::PathBuf};
-
-    struct MockFileSystem {
-        pub read_dir_behavior: RefCell<Vec<io::Result<Vec<PathBuf>>>>,
-    }
-
-    impl MockFileSystem {
-        fn new() -> Self {
-            MockFileSystem {
-                read_dir_behavior: RefCell::new(vec![]),
-            }
-        }
-    }
-
-    impl FileSystem for MockFileSystem {
-        fn read_dir(&self, _path: &std::path::Path) -> io::Result<Vec<PathBuf>> {
-            self.read_dir_behavior
-                .borrow_mut()
-                .pop()
-                .unwrap_or(Ok(vec![]))
-        }
-    }
+    use crate::file_system::MockFileSystem;
+    use std::{path::PathBuf, vec};
 
     #[test]
     fn test_list_request() {
-        let mock_fs = MockFileSystem::new();
-        mock_fs
-            .read_dir_behavior
-            .borrow_mut()
-            .push(Ok(vec![PathBuf::from("path1")]));
+        let mut mock_fs = MockFileSystem::new();
+        mock_fs.expect_read_dir().returning(|_| Ok(vec![PathBuf::from("path1")]));
+        mock_fs.expect_read_file().returning(|_| Ok(String::from("Hello world")));
+
         let out = list_requests(&mock_fs).unwrap();
 
         assert_eq!(out[0], "path1");
