@@ -1,23 +1,25 @@
-use std::{env, io::Error};
+mod model;
+mod parser;
+use std::{collections::HashMap, env, io::Error};
 
 use crate::file_system::FileSystem;
 
-pub fn list_requests(fs: &dyn FileSystem) -> Result<Vec<String>, Error> {
+use self::model::Request;
+
+pub fn get_all(fs: &dyn FileSystem) -> Result<HashMap<String, Vec<Request>>, Error> {
     // Get current directory
     let cwd = env::current_dir().expect("Failed to determine current directory");
     let requests_path = cwd.join("requests");
 
     match fs.read_dir(&requests_path) {
-        Ok(entries) => {
-            println!("Listing requests in: {}", requests_path.display());
-            let mut files: Vec<String> = vec![];
-            for entry in entries {
-                let file_content = fs.read_file(entry.as_path());
-                println!("File content:");
-                println!("{}", file_content.unwrap());
-                files.push(entry.display().to_string());
+        Ok(files) => {
+            let mut requests: HashMap<String, Vec<Request>> = HashMap::new();
+            for file in files {
+                let file_content = fs.read_file(file.as_path()).unwrap();
+                let file_requests = parser::requests(&file_content)?;
+                requests.insert(file.file_name().unwrap().to_str().unwrap().to_string(), file_requests);
             }
-            Ok(files)
+            Ok(requests)
         }
         Err(e) => Err(e),
     }
@@ -32,11 +34,22 @@ mod tests {
     #[test]
     fn test_list_request() {
         let mut mock_fs = MockFileSystem::new();
-        mock_fs.expect_read_dir().returning(|_| Ok(vec![PathBuf::from("path1")]));
-        mock_fs.expect_read_file().returning(|_| Ok(String::from("Hello world")));
+        mock_fs
+            .expect_read_dir()
+            .returning(|_| Ok(vec![PathBuf::from("path1")]));
+        mock_fs
+            .expect_read_file()
+            .returning(|_| Ok(String::from("# Get contacts")));
 
-        let out = list_requests(&mock_fs).unwrap();
+        let out = get_all(&mock_fs).unwrap();
+        assert_eq!(out.len(), 1);
 
-        assert_eq!(out[0], "path1");
+        let requests = out["path1"];
+        let request = requests.first().unwrap();
+
+        assert_eq!(request.name, "Get contacts");
+
+
     }
+
 }

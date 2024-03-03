@@ -25,7 +25,6 @@ impl FileSystem for StandardFileSystem {
         {
             files.push(entry.path().to_path_buf());
         }
-        println!("Found {} files", files.len());
         Ok(files)
     }
 
