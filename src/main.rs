@@ -12,19 +12,23 @@ fn main() {
     match cli.command {
         Commands::List => {
             let fs = StandardFileSystem;
-            let request_files = requests::get_all(&fs).unwrap();
+            let requests = requests::get_all(&fs).unwrap();
             
-            println!("Found {} files", request_files.len());
-            for request_file in request_files {
-                println!(" File: {}", request_file.0);
-                println!("  Requests:");
-                for request in request_file.1 {
-                    println!("  - Name: {}", request.name);
-                }
+            println!("  Requests:");
+            for request in requests {
+                println!("  - Name: {}", request.1.name);
             }
         }
         Commands::Run { request_name } => {
-            println!("Executing request: {} ...", request_name);
+            let fs = StandardFileSystem;
+            let requests = requests::get_all(&fs).unwrap();
+
+            match requests.get(&request_name) {
+                Some(r) => println!("Executing request: {} ...", r.name),
+                None => println!("Request '{}' not found", request_name)
+
+            }
+
         }
     }
 }
