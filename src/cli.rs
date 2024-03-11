@@ -12,5 +12,8 @@ pub enum Commands {
     Run {
         #[clap(value_parser)]
         request_name: String,
+        /// Pass this flag to show all headers
+        #[clap(long, action=clap::ArgAction::SetTrue)]
+        headers: bool,
     },
 }

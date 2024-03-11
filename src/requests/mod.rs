@@ -1,4 +1,4 @@
-mod model;
+pub mod model;
 mod parser;
 use std::{collections::HashMap, env, io::Error};
 
@@ -42,7 +42,7 @@ mod tests {
             .returning(|_| Ok(vec![PathBuf::from("path1")]));
         mock_fs
             .expect_read_file()
-            .returning(|_| Ok(String::from("# Get contacts")));
+            .returning(|_| Ok(String::from("# Get contacts\nGET url.example.com")));
 
         let requests = get_all(&mock_fs).unwrap();
         assert_eq!(requests.len(), 1);
