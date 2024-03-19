@@ -28,7 +28,7 @@ async fn main() {
 
             match requests.get(&request_name) {
                 Some(request) => {
-                    let response = executor::execute_request(request).await;
+                    let response = executor::execute_request(request).await.unwrap();
                     println!("Status Code: {}", response.status);
                     println!("Duration: {:?}", response.duration);
                     if headers {
