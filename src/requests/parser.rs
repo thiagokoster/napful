@@ -4,67 +4,83 @@ use super::model::{HttpMethod, ParseError, Request};
 
 const NAME_DELIMITER: &str = "#";
 
+enum ParseState {
+    Unknown,
+    Name,
+    MethodAndUrl,
+    Headers,
+    Body,
+}
+
 pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
     let mut lines = content.lines().peekable();
     let mut requests = Vec::new();
+    let mut state = ParseState::Unknown;
+    let mut current_request = Request::new();
+    let mut body_lines: Vec<String> = vec![];
 
-    while let Some(line) = lines.next() {
-        // Read request
-        if line.starts_with(NAME_DELIMITER) {
-            let name = line.trim_start_matches(NAME_DELIMITER).trim().to_string();
-            let mut method = HttpMethod::Get;
-            let mut url: Option<String> = None;
-            let mut body: Option<String> = None;
-            let mut error: Option<ParseError> = None;
+    while let Some(line) = lines.peek() {
 
-
-            // Read request method and URL
-            if let Some(next_line) = lines.next() {
-                let parts: Vec<&str> = next_line.split_whitespace().collect();
+        match state {
+            ParseState::Unknown => {
+                if line.starts_with(NAME_DELIMITER){
+                    state = ParseState::Name
+                } else {
+                    lines.next();
+                }
+            },
+            ParseState::Name => {
+                println!("Parsing name: {}", line);
+                // Start a new request
+                current_request = Request::new();
+                current_request.name = line.trim_start_matches(NAME_DELIMITER).trim().to_string();
+                state = ParseState::MethodAndUrl;
+                lines.next();
+            },
+            ParseState::MethodAndUrl => {
+                println!("Parsing method and url: {}", line);
+                let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() == 2 {
-                    method = HttpMethod::from_str(parts[0])?;
-                    url = Some(parts[1].to_string());
+                    current_request.method = HttpMethod::from_str(parts[0])?;
+                    current_request.url = parts[1].to_string();
                 }
-            }
-
-
-            if let Some(next_line) = lines.next() {
-                // Request has body
-                if next_line.starts_with("{") {
-                    // Parse body to content
-                    let mut content = String::from("{\n");
-                    while let Some(&l) = lines.peek() {
-                        if l == "}" {
-                            lines.next();
-                            content.push_str(l);
-                            content.push('\n');
-                            break;
-                        }
-                        if l.starts_with("#") {
-                           break; 
-                        }
-
-                        lines.next();
-                        content.push_str(l);
-                        content.push('\n');
-                    }
-                    match serde_json::from_str::<serde::de::IgnoredAny>(content.as_str()) {
-                        Ok(_) => body = Some(content),
-                        Err(_) => error = Some(ParseError::new("Invalid body")),
-                    };
+                state = ParseState::Headers;
+                lines.next();
+            },
+            ParseState::Headers => {
+                println!("Parsing headers: {}", line);
+                if line.trim().is_empty() || line.eq(&"{") {
+                    state = ParseState::Body;
+                } else { 
+                    //TODO: Parse headers
+                    lines.next();
                 }
-            }
+            },
+            ParseState::Body => {
+                println!("Parsing body: {}", line);
+                if line.starts_with(NAME_DELIMITER){
+                    // End of current request and start of a new one
+                    // TODO: Validate if is a valid json and set error property
+                    current_request.body = Some(body_lines.join("\n"));
+                    requests.push(current_request);
 
-            // Add request
-            requests.push(Request {
-                name,
-                method,
-                url: url.clone().expect("request must have an url").clone(),
-                body,
-                error,
-            });
+                    current_request = Request::new();
+                    body_lines.clear();
+                    state = ParseState::Unknown;
+                } else {
+                    body_lines.push(line.to_string());
+                    lines.next();
+                }
+            },
         }
     }
+
+    // Add request
+    if !body_lines.is_empty() {
+        // TODO: Validate if is a valid json and set error property
+        current_request.body = Some(body_lines.join("\n"));
+    }
+    requests.push(current_request);
 
     Ok(requests)
 }
@@ -127,8 +143,7 @@ POST http://localhost:3000/authors
             r#"{
   "name": "Isaac",
   "last_name": "Asimov"
-}
-"#,
+}"#,
         );
 
         let requests = requests(file_content).expect("Should work with no errors");

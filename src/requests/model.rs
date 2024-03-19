@@ -63,6 +63,13 @@ pub struct Request {
     pub error: Option<ParseError>,
 }
 
+impl Request {
+    pub fn new() -> Request {
+        Request { name: String::new(), method: HttpMethod::Get, url: String::new(), body: None, error: None }
+    }
+    
+}
+
 pub struct Response {
     pub status: StatusCode,
     pub duration: Duration,
