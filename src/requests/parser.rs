@@ -1,42 +1,50 @@
-use std::{io, str::FromStr};
+use std::str::FromStr;
 
 use super::model::{HttpMethod, ParseError, Request};
 
 const NAME_DELIMITER: &str = "#";
 
-pub fn requests(content: &str) -> io::Result<Vec<Request>> {
-    let mut lines = content.lines();
+pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
+    let mut lines = content.lines().peekable();
     let mut requests = Vec::new();
 
     while let Some(line) = lines.next() {
         // Read request
         if line.starts_with(NAME_DELIMITER) {
             let name = line.trim_start_matches(NAME_DELIMITER).trim().to_string();
-            let mut method: Option<String> = None;
+            let mut method = HttpMethod::Get;
             let mut url: Option<String> = None;
             let mut body: Option<String> = None;
             let mut error: Option<ParseError> = None;
+
 
             // Read request method and URL
             if let Some(next_line) = lines.next() {
                 let parts: Vec<&str> = next_line.split_whitespace().collect();
                 if parts.len() == 2 {
-                    method = Some(parts[0].to_string());
+                    method = HttpMethod::from_str(parts[0])?;
                     url = Some(parts[1].to_string());
                 }
             }
+
 
             if let Some(next_line) = lines.next() {
                 // Request has body
                 if next_line.starts_with("{") {
                     // Parse body to content
                     let mut content = String::from("{\n");
-                    while let Some(l) = lines.next() {
+                    while let Some(&l) = lines.peek() {
                         if l == "}" {
+                            lines.next();
                             content.push_str(l);
                             content.push('\n');
                             break;
                         }
+                        if l.starts_with("#") {
+                           break; 
+                        }
+
+                        lines.next();
                         content.push_str(l);
                         content.push('\n');
                     }
@@ -50,15 +58,17 @@ pub fn requests(content: &str) -> io::Result<Vec<Request>> {
             // Add request
             requests.push(Request {
                 name,
-                method: HttpMethod::from_str(&method.unwrap())?,
+                method,
                 url: url.clone().expect("request must have an url").clone(),
                 body,
                 error,
             });
         }
     }
+
     Ok(requests)
 }
+
 
 #[cfg(test)]
 mod tests {

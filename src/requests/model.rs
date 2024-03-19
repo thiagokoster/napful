@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{io, str::FromStr, time::Duration};
+use std::{str::FromStr, time::Duration};
 
 use reqwest::{header::HeaderMap, StatusCode};
 
@@ -34,7 +34,7 @@ pub enum HttpMethod {
 }
 
 impl FromStr for HttpMethod {
-    type Err = io::Error;
+    type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let binding = s.to_lowercase();
         let s = binding.as_str();
@@ -44,12 +44,12 @@ impl FromStr for HttpMethod {
             "put" => Ok(HttpMethod::Put),
             "patch" => Ok(HttpMethod::Patch),
             "delete" => Ok(HttpMethod::Delete),
-            _ => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
+            _ => Err(ParseError::new(
                 format!(
                     "Invalid HttpMethod '{}'. Use Get, Post, Put, Patch or Delete",
                     s
-                ),
+                )
+                .as_str(),
             )),
         }
     }

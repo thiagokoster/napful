@@ -16,9 +16,13 @@ pub fn get_all(fs: &dyn FileSystem) -> Result<HashMap<String, Request>, Error> {
             let mut requests: HashMap<String, Request> = HashMap::new();
             for file in files {
                 let file_content = fs.read_file(file.as_path()).unwrap();
-                let file_requests = parser::requests(&file_content)?;
-                for request in file_requests {
-                    requests.insert(request.name.clone(), request);
+                match parser::requests(&file_content) {
+                    Ok(file_requests) => {
+                        for request in file_requests {
+                            requests.insert(request.name.clone(), request);
+                        }
+                    }
+                    Err(_) => panic!(""),
                 }
             }
             Ok(requests)
