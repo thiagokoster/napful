@@ -1,6 +1,28 @@
+use core::fmt;
 use std::{io, str::FromStr, time::Duration};
 
 use reqwest::{header::HeaderMap, StatusCode};
+
+#[derive(Debug)]
+pub struct ParseError {
+    pub message: String,
+}
+
+impl ParseError {
+    pub fn new(message: &str) -> ParseError {
+        ParseError {
+            message: message.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Parse Error: {}", self.message)
+    }
+}
+
+impl std::error::Error for ParseError {}
 
 #[derive(Debug, PartialEq)]
 pub enum HttpMethod {
@@ -8,9 +30,8 @@ pub enum HttpMethod {
     Post,
     Put,
     Patch,
-    Delete
+    Delete,
 }
-
 
 impl FromStr for HttpMethod {
     type Err = io::Error;
@@ -23,21 +44,28 @@ impl FromStr for HttpMethod {
             "put" => Ok(HttpMethod::Put),
             "patch" => Ok(HttpMethod::Patch),
             "delete" => Ok(HttpMethod::Delete),
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid HttpMethod. Use Get, Post, Put, Patch or Delete"))
-        } 
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "Invalid HttpMethod '{}'. Use Get, Post, Put, Patch or Delete",
+                    s
+                ),
+            )),
+        }
     }
 }
-
 
 pub struct Request {
     pub name: String,
     pub method: HttpMethod,
     pub url: String,
+    pub body: Option<String>,
+    pub error: Option<ParseError>,
 }
 
 pub struct Response {
     pub status: StatusCode,
-    pub duration: Duration, 
+    pub duration: Duration,
     pub headers: HeaderMap,
-    pub body: String
+    pub body: String,
 }

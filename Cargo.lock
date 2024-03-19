@@ -557,6 +557,8 @@ dependencies = [
  "clap",
  "mockall",
  "reqwest",
+ "serde",
+ "serde_json",
  "tokio",
  "walkdir",
 ]

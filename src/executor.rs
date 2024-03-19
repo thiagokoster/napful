@@ -1,17 +1,24 @@
 use std::time::Instant;
 
+use reqwest::header;
 
 use crate::requests::model::{HttpMethod, Request, Response};
-
 
 pub async fn execute_request(request: &Request) -> Result<Response, reqwest::Error> {
     let start = Instant::now();
     let client = reqwest::Client::new();
-    let http_request = match request.method {
+    let mut http_request = match request.method {
         HttpMethod::Get => client.get(request.url.clone()),
         HttpMethod::Post => client.post(request.url.clone()),
-        _ => todo!("Not implemented")
+        _ => todo!("Not implemented"),
     };
+
+    // Add a body if applicable
+    if let Some(body) = &request.body {
+        http_request = http_request.body(body.clone());
+    }
+
+    http_request = http_request.header(header::CONTENT_TYPE, "application/json");
 
     let response = http_request.send().await?;
 
@@ -25,6 +32,6 @@ pub async fn execute_request(request: &Request) -> Result<Response, reqwest::Err
         status,
         duration,
         headers,
-        body
+        body,
     })
 }

@@ -27,7 +27,6 @@ pub fn get_all(fs: &dyn FileSystem) -> Result<HashMap<String, Request>, Error> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,8 +49,5 @@ mod tests {
         let request = &requests["Get contacts"];
 
         assert_eq!(request.name, "Get contacts");
-
-
     }
-
 }
