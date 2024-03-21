@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr};
 
 use super::model::{HttpMethod, ParseError, Request};
 
@@ -60,15 +60,16 @@ pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
                 println!("Parsing body: {}", line);
                 if line.starts_with(NAME_DELIMITER){
                     // End of current request and start of a new one
-                    // TODO: Validate if is a valid json and set error property
-                    current_request.body = Some(body_lines.join("\n"));
+                    validate_body(&body_lines, &mut current_request);
                     requests.push(current_request);
 
                     current_request = Request::new();
                     body_lines.clear();
                     state = ParseState::Unknown;
                 } else {
-                    body_lines.push(line.to_string());
+                    if !line.is_empty(){
+                        body_lines.push(line.to_string());
+                    }
                     lines.next();
                 }
             },
@@ -78,11 +79,25 @@ pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
     // Add request
     if !body_lines.is_empty() {
         // TODO: Validate if is a valid json and set error property
-        current_request.body = Some(body_lines.join("\n"));
+        validate_body(&body_lines, &mut current_request);
+        body_lines.clear();
     }
     requests.push(current_request);
 
     Ok(requests)
+}
+
+fn validate_body(body_lines : &Vec<String>, current_request : &mut Request) {
+    if !body_lines.is_empty() {
+        let body = body_lines.join("\n");
+        println!("Validating body: {}", body);
+        match serde_json::from_str::<serde::de::IgnoredAny>(body.as_str()) {
+            Ok(_) => current_request.error = None,
+            Err(e) => current_request.error = Some(ParseError::new(format!("invalid request body: {}", e).as_str()))
+        }
+
+        current_request.body = Some(body);
+    }
 }
 
 
