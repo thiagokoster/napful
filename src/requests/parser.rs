@@ -1,4 +1,4 @@
-use std::{str::FromStr};
+use std::str::FromStr;
 
 use super::model::{HttpMethod, ParseError, Request};
 
@@ -20,25 +20,22 @@ pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
     let mut body_lines: Vec<String> = vec![];
 
     while let Some(line) = lines.peek() {
-
         match state {
             ParseState::Unknown => {
-                if line.starts_with(NAME_DELIMITER){
+                if line.starts_with(NAME_DELIMITER) {
                     state = ParseState::Name
                 } else {
                     lines.next();
                 }
-            },
+            }
             ParseState::Name => {
-                println!("Parsing name: {}", line);
                 // Start a new request
                 current_request = Request::new();
                 current_request.name = line.trim_start_matches(NAME_DELIMITER).trim().to_string();
                 state = ParseState::MethodAndUrl;
                 lines.next();
-            },
+            }
             ParseState::MethodAndUrl => {
-                println!("Parsing method and url: {}", line);
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() == 2 {
                     current_request.method = HttpMethod::from_str(parts[0])?;
@@ -46,19 +43,19 @@ pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
                 }
                 state = ParseState::Headers;
                 lines.next();
-            },
+            }
             ParseState::Headers => {
-                println!("Parsing headers: {}", line);
                 if line.trim().is_empty() || line.eq(&"{") {
                     state = ParseState::Body;
-                } else { 
+                } else {
                     //TODO: Parse headers
+                    let (key, value) = line.split_once(':').unwrap();
+                    current_request.headers.insert(key.trim().to_string(), value.trim().to_string());
                     lines.next();
                 }
-            },
+            }
             ParseState::Body => {
-                println!("Parsing body: {}", line);
-                if line.starts_with(NAME_DELIMITER){
+                if line.starts_with(NAME_DELIMITER) {
                     // End of current request and start of a new one
                     validate_body(&body_lines, &mut current_request);
                     requests.push(current_request);
@@ -67,12 +64,12 @@ pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
                     body_lines.clear();
                     state = ParseState::Unknown;
                 } else {
-                    if !line.is_empty(){
+                    if !line.is_empty() {
                         body_lines.push(line.to_string());
                     }
                     lines.next();
                 }
-            },
+            }
         }
     }
 
@@ -87,19 +84,21 @@ pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
     Ok(requests)
 }
 
-fn validate_body(body_lines : &Vec<String>, current_request : &mut Request) {
+fn validate_body(body_lines: &Vec<String>, current_request: &mut Request) {
     if !body_lines.is_empty() {
         let body = body_lines.join("\n");
-        println!("Validating body: {}", body);
         match serde_json::from_str::<serde::de::IgnoredAny>(body.as_str()) {
             Ok(_) => current_request.error = None,
-            Err(e) => current_request.error = Some(ParseError::new(format!("invalid request body: {}", e).as_str()))
+            Err(e) => {
+                current_request.error = Some(ParseError::new(
+                    format!("invalid request body: {}", e).as_str(),
+                ))
+            }
         }
 
         current_request.body = Some(body);
     }
 }
-
 
 #[cfg(test)]
 mod tests {

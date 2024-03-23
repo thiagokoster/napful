@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{str::FromStr, time::Duration};
+use std::{collections::HashMap, str::FromStr, time::Duration};
 
 use reqwest::{header::HeaderMap, StatusCode};
 
@@ -24,8 +24,9 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub enum HttpMethod {
+    #[default]
     Get,
     Post,
     Put,
@@ -55,19 +56,20 @@ impl FromStr for HttpMethod {
     }
 }
 
+#[derive(Default)]
 pub struct Request {
     pub name: String,
     pub method: HttpMethod,
     pub url: String,
+    pub headers: HashMap<String, String>,
     pub body: Option<String>,
     pub error: Option<ParseError>,
 }
 
 impl Request {
     pub fn new() -> Request {
-        Request { name: String::new(), method: HttpMethod::Get, url: String::new(), body: None, error: None }
+        Request::default()
     }
-    
 }
 
 pub struct Response {

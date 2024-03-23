@@ -1,7 +1,5 @@
 use std::time::Instant;
 
-use reqwest::header;
-
 use crate::requests::model::{HttpMethod, Request, Response};
 
 pub async fn execute_request(request: &Request) -> Result<Response, reqwest::Error> {
@@ -18,7 +16,10 @@ pub async fn execute_request(request: &Request) -> Result<Response, reqwest::Err
         http_request = http_request.body(body.clone());
     }
 
-    http_request = http_request.header(header::CONTENT_TYPE, "application/json");
+    for (key, value) in request.headers.iter() {
+        http_request = http_request.header(key, value);
+    }
+
 
     let response = http_request.send().await?;
 
