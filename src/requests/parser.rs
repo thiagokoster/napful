@@ -1,4 +1,6 @@
-use std::str::FromStr;
+use std::{env, str::FromStr };
+
+use regex::Regex;
 
 use super::model::{HttpMethod, ParseError, Request};
 
@@ -39,7 +41,10 @@ pub fn requests(content: &str) -> Result<Vec<Request>, ParseError> {
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() == 2 {
                     current_request.method = HttpMethod::from_str(parts[0])?;
-                    current_request.url = parts[1].to_string();
+                    match fill_env_var(parts[1]) {
+                        Ok(content) => current_request.url = content, 
+                        Err(e) => current_request.error = Some(e) 
+                    }
                 }
                 state = ParseState::Headers;
                 lines.next();
@@ -98,6 +103,31 @@ fn validate_body(body_lines: &Vec<String>, current_request: &mut Request) {
 
         current_request.body = Some(body);
     }
+}
+
+fn fill_env_var(line: &str) -> Result<String, ParseError> {
+    let re = Regex::new(r"\{\{(\w+)\}\}").unwrap();
+
+    let mut result = String::new();
+    let mut last_end = 0;
+    for caps in re.captures_iter(line) {
+        let match_start = caps.get(0).unwrap().start();
+        let match_end = caps.get(0).unwrap().end();
+        let var_name = &caps[1];
+
+        result.push_str(&line[last_end..match_start]);
+
+        match env::var(var_name) {
+            Ok(value) => result.push_str(&value),
+            Err(_) => return Err(ParseError::new(format!("Environment variable: {} not found", var_name).as_str()))
+        };
+
+        last_end = match_end;
+    }
+
+    result.push_str(&line[last_end..]);
+
+    Ok(result)
 }
 
 #[cfg(test)]

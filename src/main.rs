@@ -2,7 +2,6 @@ mod cli;
 mod executor;
 mod file_system;
 mod requests;
-mod environment;
 
 use std::env;
 
@@ -17,13 +16,19 @@ async fn main() {
     // Get current directory
     let cwd = env::current_dir().expect("Failed to determine current directory");
     let requests_path = cwd.join("requests");
-    let requests_path = requests_path.as_path();
+
+    let env_file_path = requests_path.join(".env");
+    let fs = StandardFileSystem;
+    if let Err(e) = dotenvy::from_path(env_file_path.as_path()) {
+        println!("Error while loading environment file: {}", e);
+    }
+
+    println!("BASE_URL: {:?}", env::var("BASE_URL"));
 
     //TODO: Move printing to the commandline to another place. It should not be in main.cs
     match cli.command {
         Commands::List => {
-            let fs = StandardFileSystem;
-            let requests = requests::get_all(&fs, requests_path).unwrap();
+            let requests = requests::get_all(&fs, requests_path.as_path()).unwrap();
 
             println!("  Requests:");
             for request in requests {
@@ -38,7 +43,7 @@ async fn main() {
             headers,
         } => {
             let fs = StandardFileSystem;
-            let requests = requests::get_all(&fs, requests_path).unwrap();
+            let requests = requests::get_all(&fs, requests_path.as_path()).unwrap();
 
             match requests.get(&request_name) {
                 Some(request) => {
