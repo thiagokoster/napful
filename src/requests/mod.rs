@@ -1,17 +1,14 @@
 pub mod model;
 mod parser;
-use std::{collections::HashMap, env, io::Error};
+use std::{collections::HashMap, io::Error, path::Path};
 
 use crate::file_system::FileSystem;
 
 use self::model::Request;
 
-pub fn get_all(fs: &dyn FileSystem) -> Result<HashMap<String, Request>, Error> {
-    // Get current directory
-    let cwd = env::current_dir().expect("Failed to determine current directory");
-    let requests_path = cwd.join("requests");
+pub fn get_all(fs: &dyn FileSystem, requests_path: &Path) -> Result<HashMap<String, Request>, Error> {
 
-    match fs.read_dir(&requests_path) {
+    match fs.read_dir(requests_path) {
         Ok(files) => {
             let mut requests: HashMap<String, Request> = HashMap::new();
             for file in files {
@@ -47,7 +44,7 @@ mod tests {
             .expect_read_file()
             .returning(|_| Ok(String::from("# Get contacts\nGET url.example.com")));
 
-        let requests = get_all(&mock_fs).unwrap();
+        let requests = get_all(&mock_fs, Path::new("anypath")).unwrap();
         assert_eq!(requests.len(), 1);
 
         let request = &requests["Get contacts"];
