@@ -6,6 +6,14 @@ Napful is a command-line tool designed to help developers interact with HTTP API
 - **Execute Requests**: Run a specific request by name.
 - **Environment variable support**: Define environment variables in a `.env` file or as actual environment variables to customize your API requests on the fly.
 
+## Getting Started
+To get stared, you can clone the repository and complie the project using Cargo:
+```sh  
+git clone https://github.com/thiagokoster/napful
+cd napful
+cargo build --release
+```
+
 ## Usage
 
 ### Request File format
@@ -65,3 +73,6 @@ Variables can be used in the request file like so:
 # Get posts
 GET {{BASE_URL}}/posts
 ```
+
+## License
+Napful is released under the MIT License. See the LICENSE file for more details.
