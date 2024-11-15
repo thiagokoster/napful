@@ -35,6 +35,7 @@ async fn main() {
         Commands::Run {
             request_name,
             headers,
+            formatted
         } => {
             let fs = StandardFileSystem;
             let requests = requests::get_all(&fs, requests_path.as_path()).unwrap();
@@ -45,7 +46,7 @@ async fn main() {
                         println!("Invalid request: {}", err.message);
                         return;
                     }
-                    let response = executor::execute_request(request).await.unwrap();
+                    let response = executor::execute_request(request, formatted).await.unwrap();
                     println!("Status Code: {}", response.status);
                     println!("Duration: {:?}", response.duration);
                     if headers {

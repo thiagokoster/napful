@@ -15,5 +15,8 @@ pub enum Commands {
         /// Pass this flag to show all headers
         #[clap(long, action=clap::ArgAction::SetTrue)]
         headers: bool,
+        /// Pass this flag to format reponse body
+        #[clap(long, action=clap::ArgAction::SetTrue)]
+        formatted: bool,
     },
 }

@@ -58,5 +58,11 @@ Napful will omit response headers by default. They can be enabled `--headers` fl
 napful run "Get posts" --headers
 ```
 
+You can get the response body formatted by running the request with the --formated flag.
+This is especially useful for improving the readability of JSON responses.
+```sh 
+napful run "Get posts" --formatted
+```
+
 ## License
 Napful is released under the MIT License. See the [LICENSE](https://github.com/thiagokoster/napful/blob/main/LICENSE) file for more details.
