@@ -4,7 +4,6 @@ Napful is a command-line tool designed to help developers interact with HTTP API
 ## Current features
 - **List Requests**: Easily list all requests saved in the requests folder.
 - **Execute Requests**: Run a specific request by name.
-- **Environment variable support**: Define environment variables in a `.env` file or as actual environment variables to customize your API requests on the fly.
 
 ## Getting Started
 To get started, you can clone the repository and compile the project using Cargo:
@@ -57,21 +56,6 @@ napful run "Get posts"
 Napful will omit response headers by default. They can be enabled `--headers` flag if necessary
 ```sh 
 napful run "Get posts" --headers
-```
-
-### Environment Variables
-Define environment variables in a `.env` file in your `requests` folder. The `.env` file should follow the format:
-```env
-BASE_URL=https://api.example.com
-API_KEY=your_api_key
-```
-
-You can also specify environment variables in your shell session, which will precede the `.env` file.
-
-Variables can be used in the request file like so:
-```
-# Get posts
-GET {{BASE_URL}}/posts
 ```
 
 ## License

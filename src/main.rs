@@ -17,13 +17,7 @@ async fn main() {
     let cwd = env::current_dir().expect("Failed to determine current directory");
     let requests_path = cwd.join("requests");
 
-    let env_file_path = requests_path.join(".env");
     let fs = StandardFileSystem;
-    if let Err(e) = dotenvy::from_path(env_file_path.as_path()) {
-        println!("Error while loading environment file: {}", e);
-    }
-
-    println!("BASE_URL: {:?}", env::var("BASE_URL"));
 
     //TODO: Move printing to the commandline to another place. It should not be in main.cs
     match cli.command {
