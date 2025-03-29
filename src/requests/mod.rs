@@ -1,12 +1,12 @@
 pub mod model;
 mod parser;
-use std::{collections::HashMap, io::Error, path::Path};
+use std::{collections::HashMap, error::Error, path::Path};
 
 use crate::file_system::FileSystem;
 
 use self::model::Request;
 
-pub fn get_all(fs: &dyn FileSystem, requests_path: &Path) -> Result<HashMap<String, Request>, Error> {
+pub fn get_all(fs: &dyn FileSystem, requests_path: &Path) -> Result<HashMap<String, Request>, Box<dyn Error>> {
 
     match fs.read_dir(requests_path) {
         Ok(files) => {
@@ -19,12 +19,14 @@ pub fn get_all(fs: &dyn FileSystem, requests_path: &Path) -> Result<HashMap<Stri
                             requests.insert(request.name.clone(), request);
                         }
                     }
-                    Err(_) => panic!(""),
+                    Err(err) => {
+                        return Err(Box::new(err));
+                    },
                 }
             }
             Ok(requests)
         }
-        Err(e) => Err(e),
+        Err(e) => Err(Box::new(e)),
     }
 }
 

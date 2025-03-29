@@ -4,21 +4,19 @@ use std::{collections::HashMap, str::FromStr, time::Duration};
 use reqwest::{header::HeaderMap, StatusCode};
 
 #[derive(Debug)]
-pub struct ParseError {
-    pub message: String,
-}
-
-impl ParseError {
-    pub fn new(message: &str) -> ParseError {
-        ParseError {
-            message: message.to_string(),
-        }
-    }
+pub enum ParseError {
+    InvalidHttpMethod(String),
+    InvalidBody(String),
+    InvalidRequestLine(String)
 }
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Parse Error: {}", self.message)
+        match self {
+            ParseError::InvalidHttpMethod(method) => write!(f, "Invalid http method '{method}'"),
+            ParseError::InvalidBody(request) => write!(f, "Invalid body for request '{request}'"),
+            ParseError::InvalidRequestLine(line) => write!(f, "Invalid request line: '{line}'"),
+        }
     }
 }
 
@@ -45,13 +43,7 @@ impl FromStr for HttpMethod {
             "put" => Ok(HttpMethod::Put),
             "patch" => Ok(HttpMethod::Patch),
             "delete" => Ok(HttpMethod::Delete),
-            _ => Err(ParseError::new(
-                format!(
-                    "Invalid HttpMethod '{}'. Use Get, Post, Put, Patch or Delete",
-                    s
-                )
-                .as_str(),
-            )),
+            _ => Err(ParseError::InvalidHttpMethod(s.to_string())),
         }
     }
 }

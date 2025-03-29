@@ -27,7 +27,7 @@ async fn main() {
             println!("  Requests:");
             for request in requests {
                 match request.1.error {
-                    Some(e) => println!("  - Name: {} -> ERR: {}", request.1.name, e.message),
+                    Some(e) => println!("  - Name: {} -> ERR: {}", request.1.name, e),
                     None => println!("  - Name: {}", request.1.name),
                 }
             }
@@ -38,15 +38,26 @@ async fn main() {
             formatted
         } => {
             let fs = StandardFileSystem;
-            let requests = requests::get_all(&fs, requests_path.as_path()).unwrap();
+            let requests_result = requests::get_all(&fs, requests_path.as_path());
+            let Ok(requests) = requests_result else {
+                let err = requests_result.err().unwrap();
+                eprintln!("Request failed: {err}");
+                return;
+            };
 
             match requests.get(&request_name) {
                 Some(request) => {
                     if let Some(err) = &request.error {
-                        println!("Invalid request: {}", err.message);
+                        println!("Invalid request: {}", err);
                         return;
                     }
-                    let response = executor::execute_request(request, formatted).await.unwrap();
+                    let result = executor::execute_request(request, formatted).await;
+                    let Ok(response) = result else {
+                        let err = result.err().unwrap();
+                        eprintln!("Request failed: {err}");
+                        return;
+                    };
+
                     println!("Status Code: {}", response.status);
                     println!("Duration: {:?}", response.duration);
                     if headers {
