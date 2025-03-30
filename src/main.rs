@@ -5,6 +5,21 @@ use commands::dispatch;
 mod cli;
 mod commands;
 mod errors;
+mod index;
+
+mod storage {
+    pub mod database;
+    pub mod file;
+    pub mod repositories {
+        pub mod file;
+        pub mod request;
+    }
+}
+
+pub mod models {
+    pub mod file;
+    pub mod request;
+}
 
 #[tokio::main]
 async fn main() {
